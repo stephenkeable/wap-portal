@@ -1,3 +1,4 @@
+var http = require('http');
 var express = require('express');
 var app = express();
 
@@ -8,6 +9,13 @@ var xml2js = require('xml2js');
 var parser = new xml2js.Parser();
 
 var output_news = "";
+
+app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8080);
+app.set('ip', process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1');
+
+http.createServer(app).listen(app.get('port'), app.get('ip'), function(){
+  console.log('Express server listening on port ' + app.get('port'));
+});
 
 app.get('/', function (req, res) {
     
@@ -39,9 +47,3 @@ app.get('/', function (req, res) {
 
     });
 });
-
-app.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
-});
-
-module.exports = app;
