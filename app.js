@@ -1,14 +1,14 @@
-var http = require('http');
 var express = require('express');
+var path = require('path');
+var bodyParser = require('body-parser');
+var expressLess = require('express-less');
+var http = require('http');
+
 var app = express();
 
-var fs = require('fs');
-var request = require('request');
-
-var xml2js = require('xml2js');
-var parser = new xml2js.Parser();
-
-var output_news = "";
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'hbs');
 
 app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8080);
 app.set('ip', process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1');
@@ -17,33 +17,25 @@ http.createServer(app).listen(app.get('port'), app.get('ip'), function(){
   console.log('Express server listening on port ' + app.get('port'));
 });
 
-app.get('/', function (req, res) {
-    
-    request('http://www.bbc.co.uk/sport/football/teams/norwich-city/rss.xml', function (error, response, body) {
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/less-css', expressLess(__dirname + '/public/styles/', { compress: true }));
 
-      if (!error && response.statusCode == 200) {
+// sections
 
-          parser.parseString(body, function (err, result) {
+var home = require('./routes/home');
+app.use('/', home);
 
-              channel = result.rss.channel;
+var news = require('./routes/news');
+app.use('/news', news);
 
-              for (i = 0; i < channel.length; i++) {
+var football = require('./routes/football');
+app.use('/football', football);
 
-                  items = channel[i].item;
-
-                  for (i = 0; i < items.length; i++) {
-
-                    output_news = output_news + "<p><strong>" +items[i].title[0] + '</strong><br>' + items[i].description[0] + '</p>';   
-
-                  }
-                  
-                  res.send(output_news);
-
-              }
-
-        });
-
-      }
-
-    });
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
 });
+
+module.exports = app;
